@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>TO DO Planner</title>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="/bootstrap335/css/bootstrap.min.css">
+    <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.0.7/angular.min.js"></script>
+    <script src="./project.js"></script>
+    <link href='https://fonts.googleapis.com/css?family=Oswald' rel='stylesheet' type='text/css'>
+    <style>
+        div {
+            margin: 15px;
+            padding: 15px;
+            font-family: 'Oswald', sans-serif;
+            font-size: 22px;
+            background-color: whitesmoke;
+        }
+        
+        hr {
+            border-top: 10px;
+            border-color: #000000;
+            border-style: dotted;
+        }
+    </style>
+</head>
+
+<body>
+    <div ng-app="ToDoPlanner" id="main_div">
+        <h1>Just Another To-Do Application with some links</h1>
+        <div ng-view></div>
+
+        <script type="text/ng-template" id="list.html">
+            <input type="text" ng-model="query" ng-change="search()" class="search-query" placeholder="Search for anything in the table">
+            <i class="icon-search"></i>
+            <a href=".">Reset Filter (Simply Refresh or Click Here)</a>
+            <hr>
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>WebSite Full Address</a>
+                        </th>
+                        <th>ToDo</th>
+                        <th>Responsible</th>
+                        <th><a href="#/new"><i class="icon-plus"></i></a></th>
+                        <th><a href="http://www.vit-consulting.com"><i class="icon-flag"></i></a></th>
+                        <th><a href="http://www.vitoshacademy.com"><i class="icon-fire"></i></a></th>
+                        <th><a href="http://www.herecomesthecode.com"><i class="icon-star"></i></a></th>
+
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr ng-repeat="link in pagedItems[currentPage]">
+                        <td><a href="{{link.projectaddress}}">{{link.nameproject}}</a></td>
+                        <td>{{link.todo}}</td>
+                        <td>{{link.responsible}}</td>
+                        <td>
+                            <a href="#/edit/{{link.Id}}"><i class="icon-pencil"></i></a>
+                        </td>
+                        <td>
+                            <i class="icon-heart" ng-click="update_label(link.info)" ng-controller="myCtrl"></i>
+                        </td>
+                        <td>
+                            <a href="#/info/{{link.Id}}"><i class="icon-info-sign"></i></a>
+                        </td>
+                        <td>
+                            <a href="#/delete/{{link.Id}}"><i class = "icon-remove"></i></a>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+            <button ng-disabled="currentPage == 0" ng-click="setPage( currentPage=currentPage-1 )" class="btn btn-warning">
+                Previous
+            </button>
+            Page: {{currentPage+1}}/{{numberOfPages()}}
+            <button ng-disabled="currentPage >= filteredItems.length/pageSize - 1" ng-click="setPage( currentPage=currentPage+1 )" class="btn btn-warning">
+                Next
+            </button>
+            Links: {{filteredItems.length}}
+            <hr>
+            <label class="control-label" id="label_with_data">Here be dragons</label>
+            <label class="control-label" id="label_with_data_2"></label>
+        </script>
+        <script type="text/ng-template" id="delete.html">
+            <form name="my_delete_form" class="form-horizontal">
+                <div class="control-group" ng-class="{error: my_delete_form.nameproject.$invalid}">
+                    <div class="control-group">
+                        <label>Are you sure that you want to delete {{alink.nameproject}}?</label>
+                        <button ng-click="close()" ng-show="alink.Id" class="btn btn-info">Back</button>
+                        <button ng-click="delete()" ng-show="alink.Id" class="btn btn-danger">Delete</button>
+                    </div>
+                </div>
+            </form>
+        </script>
+        <script type="text/ng-template" id="error404.html">
+            <form name="me_error" class="form-horizontal">
+                <div class="control-group">
+                    <label>404 is the bus to Druzhba :)</label>
+                    <button ng-click="close()" class="btn ">Back To Do Stuff</button>
+                </div>
+            </form>
+        </script>
+        <script type="text/ng-template" id="info.html">
+            <form name="my_info_form" class="form-horizontal">
+                <div class="control-group" ng-class="{error: my_info_form.nameproject.$invalid}">
+                    <div class="control-group">
+                        <label>{{alink.info}}</label>
+                        <button ng-click="close()" ng-show="alink.Id" class="btn btn-info">Back</button>
+                    </div>
+                </div>
+            </form>
+        </script>
+        <script type="text/ng-template" id="detail.html">
+            <form name="my_edit_form" class="form-horizontal">
+                <div class="control-group" ng-class="{error: my_edit_form.nameproject.$invalid}">
+                    <label class="control-label">Name the Project:</label>
+                    <input type="text" name="nameproject" ng-model="alink.nameproject" required>
+                    <span ng-show="my_edit_form.name.$error.required" class="help-inline">Required</span>
+                </div>
+                <div class="control-group" ng-class="{error: my_edit_form.projectaddress.$invalid}">
+                    <label class="control-label">Website:</label>
+                    <input type="url" name="projectaddress" ng-model="alink.projectaddress" required>
+                    <span ng-show="my_edit_form.site.$error.required" class="help-inline">Required</span>
+                    <span ng-show="my_edit_form.site.$error.url" class="help-inline">Not a URL</span>
+                </div>
+                <div class="control-group">
+                    <label class="control-label">To do:</label>
+                    <textarea name="todo" rows="5" ng-model="alink.todo"></textarea>
+                </div>
+                <div class="control-group">
+                    <label class="control-label">Responsible:</label>
+                    <input type="text" name="responsible" ng-model="alink.responsible">
+                </div>
+                <div class="control-group">
+                    <label class="control-label">Additional info:</label>
+                    <textarea name="info" rows="5" ng-model="alink.info"></textarea>
+                </div>
+
+                <div class="control-group">
+                    <label class="control-label"></label>
+                    <a href="#/" class="btn" ng-click="close()">Cancel</a>
+                    <button ng-click="save()" ng-disabled="isClean() || my_edit_form.$invalid" class="btn btn-primary">Save</button>
+                    <button ng-click="destroy()" ng-show="alink.Id" class="btn btn-danger">Delete
+                    </button>
+                </div>
+            </form>
+        </script>
+    </div>
+</body>
+
+</html>
